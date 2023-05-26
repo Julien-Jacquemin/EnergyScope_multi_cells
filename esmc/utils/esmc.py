@@ -183,6 +183,8 @@ class Esmc:
                                         (self.regions_names, self.regions_names), :]
         self.data_reg['Exch']['Exchange_losses'] = pd.read_csv(data_path / 'Exchange_losses.csv', sep=CSV_SEPARATOR,
                                                     header=[0], index_col=[0])
+        self.data_reg['Exch']['Multiplication_factor'] = pd.read_csv(data_path / 'Multiplication_factor.csv', sep=CSV_SEPARATOR,
+                                                    header=[0], index_col=[0])
         self.data_reg['Exch']['Lhv'] = pd.read_csv(data_path / 'Lhv.csv', sep=CSV_SEPARATOR, header=[0], index_col=[0])
         r_path = (data_path / 'Misc_exch.json')
         if r_path.is_file(): # if the file exist, update the data
