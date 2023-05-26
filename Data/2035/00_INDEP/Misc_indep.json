@@ -4,7 +4,6 @@
 	"H2_grid_flag": 1,
 	"power_density_pv" : 0.170,
     "power_density_solar_thermal" : 0.7,
-	"H2_grid_flag" : 1,
 	"load_hour_H2_network" : 5000,
 	"sm_max" : 4,
 	"c_grid_extra" : 367.8,
