@@ -88,6 +88,8 @@ class Esmc:
         self.data_reg = dict.fromkeys(['Exch', 'Demands', 'Technologies',
                                        'Storage_power_to_energy', 'Misc'])  # data specific to regions considered
 
+        # Flag to signal possibility of hydrogen exchange or not.
+        self.H2_exchange_flag = False
         # initialize TemporalAggregation object
         self.ta = None
         # TODO self.spatial_aggreg = object spatial_aggreg
@@ -192,6 +194,14 @@ class Esmc:
         self.data_reg['Exch']['Network_exchanges'] = pd.read_csv(data_path / 'Network_exchanges.csv', sep=CSV_SEPARATOR,
                                                       header=[0], index_col=[0, 1, 2]).loc[
                                           (self.regions_names, self.regions_names, self.data_reg['Exch']['Misc_exch']['add_sets']['EXCHANGE_NETWORK_R']), :]
+        if "H2" in [index[2] for index in list(self.data_reg['Exch']['Network_exchanges'].index)]:
+            self.H2_exchange_flag = True
+        self.data_reg['Exch']['Operation_Maintenance'] = pd.read_csv(data_path / 'O&M_cost.csv', sep=CSV_SEPARATOR,
+                                                      header=[0], index_col=[0, 1, 2]).loc[
+                                          (self.regions_names, self.regions_names, self.data_reg['Exch']['Misc_exch']['add_sets']['EXCHANGE_NETWORK_R']), :]
+        self.data_reg['Exch']['Repurpose_cost'] = pd.read_csv(data_path / 'Repurpose_cost.csv', sep=CSV_SEPARATOR,
+                                                      header=[0], index_col=[0, 1]).loc[
+                                          (self.regions_names, self.regions_names), :]
 
     def read_data_indep(self):
         """Read data independent of the region dimension of the problem
@@ -685,7 +695,16 @@ class Esmc:
             # drop general f_perc constraints
             self.esom.ampl.get_constraint('f_max_perc').drop()
             self.esom.ampl.get_constraint('f_min_perc').drop()
-
+            
+        if self.H2_exchange_flag == True:
+            self.esom.ampl.get_constraint('exch_network_cost_calc').drop()
+            self.esom.ampl.get_constraint('total_conversion_transfer_capacity_bounds').drop()
+        
+        else:
+            self.esom.ampl.get_constraint('exch_network_cost_calc_when_H2').drop()
+            self.esom.ampl.get_constraint('exch_network_cost_calc_gas').drop()
+            self.esom.ampl.get_constraint('exch_network_cost_calc_H2').drop()
+            self.esom.ampl.get_constraint('total_conversion_transfer_capacity_bounds_H2').drop()
         return
 
     def solve_esom(self, run=True):

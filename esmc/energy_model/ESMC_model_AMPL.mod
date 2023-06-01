@@ -80,7 +80,7 @@ set EXCHANGE_NETWORK_BIDIRECTIONAL within EXCHANGE_NETWORK_R; # Exchange network
 param i_rate > 0; # discount rate [-]: real discount rate
 param gwp_limit_overall >=0; # [ktCO2-eq./year] maximum gwp emissions allowed for global system
 param t_op {HOURS, TYPICAL_DAYS} default 1;# [h]: operating time 
-param H2_grid_flag >=0; # 0 or 1, wether we consider the hydrogen distribution network or not.
+
 
 # Attributes of TECHNOLOGIES and RESOURCES
 param c_op_exterior {RESOURCES} >= 0; 
@@ -105,13 +105,16 @@ param power_density_solar_thermal >=0 default 0;# Maximum power irradiance for s
 # Networks attributes
 param loss_network {END_USES_TYPES} >= 0 default 0; # %_net_loss: Losses coefficient [0; 1] in the networks (grid and DHN)
 param c_grid_extra >=0, default 359; # Cost to reinforce the grid due to IRE penetration [M€2015/GW_intermittentRE].
-param load_hour_H2_network >=0, default 5000; # Load hours of the H2 newtork.
+param load_hour_H2_network >=0, default 5000; # Load hours of the H2 network.
+param ntw_H2_capa_loss >= 0, default 0.3; # Loss of capacity when converting gas pipeline to hydrogen pipelines.
 
 # Attributes of exchanges
 param exchange_losses {RESOURCES} >=0 default 0; #losses on network for exchanges [%]
 param  lhv{EXCHANGE_FREIGHT_R}>=0; #lhv of fuels transported by freight
 param conversion_ratio_max >= 0 default 1; #maximum conversion ratio for gas pipeline retrofiting
 param conversion_ratio_min >= 0 default 0; #minimum conversion ratio for gas pipeline retrofiting
+param OnM_cost_exchange {REGIONS, REGIONS, EXCHANGE_NETWORK_R} >= 0 default 0; #Operation and maintenance cost of exchange networks.
+param repurpose_cost_exchange {REGIONS, REGIONS} >=0 default 0; #Cost of repurposing gas pipeline into hydrogen pipelines.
 
 ##Additional parameter (not presented in the paper)
 param total_time := sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (t_op [h, td]); # [h]. added just to simplify equations
@@ -175,6 +178,7 @@ param c_p {REGIONS, TECHNOLOGIES} >= 0, <= 1 default 1; # yearly capacity factor
 param tc_min {REGIONS, REGIONS, EXCHANGE_NETWORK_R} default 0; #minimal transfer capacity of each resource between regions [GW]
 param tc_max {REGIONS, REGIONS, EXCHANGE_NETWORK_R} default 0; #maximal transfer capacity of each resource between regions [GW]
 param tc_mul {RESOURCES} >=0 default 2; # multiplicator of the maximum transfer capacity (tc_max)
+param injection_H2_ratio_max >=0 default 0.05; #Maximum ratio H2/GAS in gas.
 
 # Attributes of STORAGE_TECH
 param storage_charge_time    {REGIONS, STORAGE_TECH} >= 0; # t_sto_in [h]: Time to charge storage (Energy to Power ratio). If value =  5 <=>  5h for a full charge.
@@ -240,9 +244,9 @@ var Exch_imp{REGIONS,REGIONS, RESOURCES, HOURS, TYPICAL_DAYS} >= 0; # (Import of
 var Exch_exp{REGIONS,REGIONS, RESOURCES, HOURS, TYPICAL_DAYS} >= 0; # (Export of c1 to c2) Negative part (export) of the exchanges of ressource between regions during a certain period t [GW]
 var Exch_freight_border{REGIONS, REGIONS}>=0; # yearly additional freight due to exchanges accross each border
 var Exch_freight{REGIONS}>=0; # yearly additional freight due to exchanges for each region
-var Transfer_capacity{c1 in REGIONS, c2 in REGIONS, i in EXCHANGE_NETWORK_R} >= 0; # Optimal transer capacity from c2 to c1
-var Total_converted_capacity{c1 in REGIONS, C2 in REGIONS} >= 0; #Optimal converted transfer capacity (from gas to H2)
-var Conversion_ratio{c1 in REGIONS, c2 in REGIONS} >= 0; #Optimal conversion ratio for gas pipeline retrofiting
+var Transfer_capacity{REGIONS, REGIONS, EXCHANGE_NETWORK_R} >= 0; # Optimal transer capacity from c2 to c1
+var Total_converted_capacity{REGIONS,REGIONS} >= 0; #Optimal converted transfer capacity (from gas to H2)
+var Conversion_ratio{REGIONS,REGIONS} >= 0; #Optimal conversion ratio for gas pipeline retrofiting
 #var Curt{REGIONS} >=0;
 
 #########################################
@@ -314,11 +318,23 @@ subject to main_cost_calc {c in REGIONS, j in TECHNOLOGIES}:
 subject to op_cost_calc {c in REGIONS, i in RESOURCES}:
 	C_op [c,i] = sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (c_op_local [c, i] * R_t_local [c, i, h, td] * t_op [h, td] + c_op_exterior [i] * R_t_exterior [c, i, h, td] * t_op [h, td] ) ;
 
-# Cost of network connections between regions
+# Constraints depending on hydrogen exchange. Only one of the two groups should be enforced at a time.
+# Cost of network connections between regions, when hydrogen can be exchanged
+subject to exch_network_cost_calc_when_H2 {c in REGIONS, i in EXCHANGE_NETWORK_R diff EXCHANGE_NETWORK_BIDIRECTIONAL diff {"GAS", "H2"}}:
+	C_exch_network [c,i] = sum {c2 in REGIONS} (c_exch_network [c,c2,i] * (Transfer_capacity [c,c2,i] - tc_min[c,c2,i]) + OnM_cost_exchange[c,c2,i] * tc_min[c,c2,i]);
+subject to exch_network_cost_calc_gas {c in REGIONS}:
+	C_exch_network [c,"GAS"] = sum {c2 in REGIONS} (OnM_cost_exchange [c,c2,"GAS"] * Transfer_capacity [c,c2,"GAS"]);
+subject to exch_network_cost_calc_H2 {c in REGIONS}:
+	C_exch_network [c,"H2"] = sum {c2 in REGIONS} (c_exch_network [c,c2,"H2"] * (Transfer_capacity [c,c2,"H2"] - (1-ntw_H2_capa_loss) * Total_converted_capacity[c,c2]) + repurpose_cost_exchange[c,c2] * (1-ntw_H2_capa_loss) * Total_converted_capacity[c,c2]);
+
+# Cost of network connections between regions, when hydrogen can not be exchanged
 subject to exch_network_cost_calc {c in REGIONS, i in EXCHANGE_NETWORK_R diff EXCHANGE_NETWORK_BIDIRECTIONAL}:
-	C_exch_network [c,i] = sum {c2 in REGIONS} (c_exch_network [c,c2,i] * Transfer_capacity [c,c2,i]);
+	C_exch_network [c,i] = sum {c2 in REGIONS} (c_exch_network [c,c2,i] * (Transfer_capacity [c,c2,i] - tc_min[c,c2,i]) + OnM_cost_exchange[c,c2,i] * tc_min[c,c2,i]);
+
+
+# Cost of bidirectional network connections between regions (doesn't depend on hydrogen exchange).
 subject to exch_network_cost_calc_bidirectional {c in REGIONS, i in EXCHANGE_NETWORK_BIDIRECTIONAL}:
-	C_exch_network [c,i] = sum {c2 in REGIONS} (c_exch_network [c,c2,i] * Transfer_capacity [c,c2,i] / 2);
+	C_exch_network [c,i] = sum {c2 in REGIONS} ((c_exch_network [c,c2,i] * (Transfer_capacity [c,c2,i] - tc_min[c,c2,i]) + OnM_cost_exchange[c,c2,i] * tc_min[c,c2,i]) / 2);
 
 ## Emissions
 #-----------
@@ -339,6 +355,7 @@ subject to gwp_op_calc {c in REGIONS, i in RESOURCES}:
 subject to co2_net_calc {c in REGIONS, i in RESOURCES}:
 	CO2_net [c,i] = sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (R_t_local [c, i, h, td] * co2_net [i] * t_op [h, td] + R_t_exterior [c, i, h, td] * co2_net [i] * t_op [h, td]);	
 
+
 	
 ## Multiplication factor
 #-----------------------
@@ -354,6 +371,9 @@ subject to capacity_factor_t {c in REGIONS, j in TECHNOLOGIES, h in HOURS, td in
 # [Eq. 11] relation between mult_t and mult via yearly capacity factor. This one forces total annual output
 subject to capacity_factor {c in REGIONS, j in TECHNOLOGIES}:
 	sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (F_t [c, j, h, td] * t_op [h, td]) <= F [c, j] * c_p [c, j] * total_time;	
+
+subject to H2_injection_limit {c in REGIONS, h in HOURS, td in TYPICAL_DAYS}:
+	F_t [c, "H2_IN_GAS_GRID", h, td] * layers_in_out ["H2_IN_GAS_GRID", "GAS"] * t_op [h, td] <= (sum {j in TECHNOLOGIES diff {"H2_IN_GAS_GRID"} diff STORAGE_TECH : layers_in_out [j, "GAS"] > 0} (F_t [c, j, h, td] * layers_in_out [j, "GAS"] * t_op [h, td]) +  R_t_local [c, "GAS", h, td] * t_op [h, td] + R_t_exterior [c, "GAS", h, td] * t_op [h, td]) * injection_H2_ratio_max;
 		
 ## Resources
 #-----------
@@ -436,8 +456,7 @@ subject to extra_dhn{c in REGIONS}:
 
 # [Eq. 23] H2 pipeline: determining the cost of the H2 domestic network.
 subject to H2_pipeline{c in REGIONS}:
-	F [c,"H2_GRID_PIPELINE"] = H2_grid_flag * sum {j in TECHNOLOGIES diff STORAGE_TECH: layers_in_out [j,"H2"] != 0} (sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (F_t [c, j, h, td]*t_op [h, td]
-*abs(layers_in_out [j, "H2"])))/(2*load_hour_H2_network);
+	F [c,"H2_GRID_PIPELINE"] = sum {j in TECHNOLOGIES diff STORAGE_TECH: layers_in_out [j,"H2"] != 0} (sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (F_t [c, j, h, td]*t_op [h, td]*abs(layers_in_out [j, "H2"])))/(2*load_hour_H2_network);
 
 # H2 compressors: the same power as the pipelines
 subject to H2_compressor{c in REGIONS}:
@@ -517,7 +536,7 @@ subject to peak_space_cooling {c in REGIONS, j in TECHNOLOGIES_OF_END_USES_TYPE[
 
 # [Eq. 36]  constraint to reduce the GWP subject to Minimum_gwp_reduction :
 subject to Minimum_GWP_reduction {c in REGIONS}:
-	sum{r in RESOURCES} (CO2_net [c,r]) <= gwp_limit[c];
+	sum{r in RESOURCES} (CO2_net [c,r]) + sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t], j in TECHNOLOGIES diff STORAGE_TECH: layers_in_out [j,"CO2_ATM"] != 0} (F_t [c, j, h, td] * layers_in_out [j,"CO2_ATM"] * t_op [h, td])  + sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (F_t [c, "INDUSTRY_CCS", h, td] * layers_in_out ["INDUSTRY_CCS","CO2_INDUSTRY"] * t_op [h, td]) <= gwp_limit[c];
 	
 # [Eq. 36]  constraint to reduce the GWP subject to Minimum_gwp_reduction :
 # Macro-cells: modified to account for direct emissions only
@@ -617,25 +636,26 @@ subject to resources_no_exchanges2 {c1 in REGIONS, c2 in REGIONS, n in NOEXCHANG
 
 # network exchanges
 subject to capacity_limit_imp {c1 in REGIONS, c2 in REGIONS, i in EXCHANGE_NETWORK_R, h in HOURS, td in TYPICAL_DAYS} :
-	Exch_imp[c1,c2,i,h,td] <= Transfer_capacity [c1,c2,i];
+	Exch_imp[c1,c2,i,h,td] <= Transfer_capacity [c2,c1,i];
 subject to capacity_limit_exp {c1 in REGIONS, c2 in REGIONS, i in EXCHANGE_NETWORK_R, h in HOURS, td in TYPICAL_DAYS} :
-	Exch_exp[c1,c2,i,h,td] <= Transfer_capacity [c2,c1,i];
+	Exch_exp[c1,c2,i,h,td] <= Transfer_capacity [c1,c2,i];
 subject to transfer_capacity_bounds {c1 in REGIONS, c2 in REGIONS, i in EXCHANGE_NETWORK_R diff {"GAS"}}:
 	tc_min[c1, c2, i] <= Transfer_capacity[c1,c2,i] <= tc_mul[i]*tc_max[c1, c2, i];
 subject to transfer_capacity_bounds_gas {c1 in REGIONS, c2 in REGIONS, i in {"GAS"}}:
 	tc_min[c1, c2, i] <= Transfer_capacity[c1,c2,i] + Total_converted_capacity[c1,c2] <= tc_mul[i]*tc_max[c1, c2, i];
-subject to total_conversion_transfer_capacity_bounds {c1 in REGIONS, c2 in REGIONS}:
+# If H2 exchanges are considered :
+subject to total_conversion_transfer_capacity_bounds_H2 {c1 in REGIONS, c2 in REGIONS}:
 	Total_converted_capacity[c1,c2] <= conversion_ratio_max*Transfer_capacity[c1,c2,"H2"];
+# If H2 exchanges are not allowed :
+subject to total_conversion_transfer_capacity_bounds {c1 in REGIONS, c2 in REGIONS}:
+	Total_converted_capacity[c1,c2] = 0;
 subject to bidirectonal_exchanges {c1 in REGIONS, c2 in REGIONS, i in EXCHANGE_NETWORK_BIDIRECTIONAL}:
 	Transfer_capacity [c1,c2,i] = Transfer_capacity [c2,c1,i];	
-subject to eval_conversion_ratio {c1 in REGIONS, c2 in REGIONS}:
-	Conversion_ratio[c1,c2] = (if tc_max[c1,c2,"GAS"] != 0 then Total_converted_capacity[c1,c2]/tc_max[c1, c2, "GAS"]
-						else 0);
 
 #subject to invariable_transfer_capacity {c1 in REGIONS, c2 in REGIONS, i in RESOURCES diff EXCHANGE_NETWORK_R}:
 #	Transfer_capacity [c1,c2,i] = tc_min [c1,c2,i];
 
-# freight exchanges (+ eq 25 and 26), computing and adding addtional freight due to exchanges
+# freight exchanges (+ eq 25 and 26), computing and adding additional freight due to exchanges
 subject to freight_of_exchanges_border{c1 in REGIONS, c2 in REGIONS} :
 	Exch_freight_border[c1,c2] = dist[c1,c2] * sum{r in EXCHANGE_FREIGHT_R, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((Exch_imp[c1,c2,r,h,td] + Exch_exp[c1,c2,r,h,td])/lhv[r]);
 subject to freight_of_exchanges{c1 in REGIONS} :

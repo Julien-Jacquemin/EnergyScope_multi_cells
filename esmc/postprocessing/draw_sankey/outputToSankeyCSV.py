@@ -116,8 +116,7 @@ def writeSankeyFile(space_id, case_study, limit=50):
         total_data_sto = total_data_sto.add(all_data_sto.loc[cells_name[i]])
     
     cells["Total"] = Cell("Total", total_data_balance, total_data_sto, limit)
-    print(cells["Total"].year_balance)
-    print(cells["ES-PT"].year_balance)
+    
     
     
     for cell in cells.values():
@@ -191,7 +190,7 @@ RegroupElements = {
     
     "Mobility": ["TRAMWAY_TROLLEY", "BUS_COACH_DIESEL", "BUS_COACH_HYDIESEL",
                  "BUS_COACH_CNG_STOICH", "BUS_COACH_FC_HYBRIDH2", "TRAIN_PUB", 
-                 "PLANE_DIESEL_INTRA_EU", "PLANE_DIESEL_EXTRA_EU", "CAR_GASOLINE", 
+                 "PLANE_DIESEL_INTRA_EU", "PLANE_H2_INTRA_EU", "PLANE_DIESEL_EXTRA_EU", "CAR_GASOLINE", 
                  "CAR_DIESEL", "CAR_NG", 
                  "CAR_METHANOL", "CAR_HEV", "CAR_PHEV", "CAR_BEV", "CAR_FUEL_CELL"],
     #"Public Mob": ["TRAMWAY_TROLLEY", "BUS_COACH_DIESEL", "BUS_COACH_HYDIESEL",
@@ -207,11 +206,11 @@ RegroupElements = {
     #"Boat Freight":     ["BOAT_FREIGHT_DIESEL", "BOAT_FREIGHT_NG", "BOAT_FREIGHT_METHANOL"],
     #"Road Freight":     ["TRUCK_DIESEL", "TRUCK_METHANOL", "TRUCK_FUEL_CELL",
     #                     "TRUCK_ELEC", "TRUCK_NG"],
-    "Int. Freight":     ["CARGO_DIESEL", "CARGO_LNG", 
+    "Int. Freight":     ["CARGO_LFO", "CARGO_LNG", 
                          "CARGO_METHANOL", "CARGO_AMMONIA", 
                          "CARGO_FUELCELL_AMMONIA","CARGO_RETRO_METHANOL",
                          "CARGO_RETRO_AMMONIA", "CARGO_FUELCELL_LH2"],
-    "Solar" :           ["PT_COLLECTOR", "ST_COLLECTOR"],
+    #"Solar" :           ["PT_COLLECTOR", "ST_COLLECTOR"],
     "H2.":               ["H2_ELECTROLYSIS", "SMR", "H2_BIOMASS", "AMMONIA_TO_H2"],
     "To Methane":       ["GASIFICATION_LIGNO_TO_SNG", "GASIFICATION_BIOWASTE_TO_SNG", 
                          "SYN_METHANATION", "BIOMETHANATION_WET_BIOMASS", "BIOMETHANATION_BIOWASTE", "BIO_HYDROLYSIS"],
@@ -252,7 +251,8 @@ RegroupElements = {
     "Cold Sto":         ["TS_COLD"],
     "End Use":          ["END_USES"],
     "Steel":            ["STEEL_DRI_C_EAF", "STEEL_DRI_H_EAF", "STEEL_BF_BOF",
-                         "STEEL_EAF_SCRAP"]
+                         "STEEL_EAF_SCRAP"],
+    "H2 injection":     ["H2_IN_GAS_GRID"]
 }
 
 Resources = [
@@ -308,7 +308,7 @@ RegroupLayers ={
     #"Road Freight": ["MOB_FREIGHT_ROAD"],	
     #"Boat Freight": ["MOB_FREIGHT_BOAT"],	
     "Int. Freight": ["CONTAINER_FREIGHT"],
-    "Solar": ["PT_HEAT", "ST_HEAT"],
+    #"Solar": ["PT_HEAT", "ST_HEAT"],
     "Steel": ["STEEL"]
     }
 
@@ -319,6 +319,7 @@ RegroupLayers ={
 
 TechLayer = {
     "Solar PV":         "RES Solar",
+    "CSP":              "RES Solar",
     "Wind Onshore":     "RES Wind",
     "Wind Offshore":    "RES Wind",
     "Hydro":            "RES Hydro",
@@ -410,7 +411,7 @@ LayerColor = {
     "RES Solar": "#FFFF00",	
     "RES Hydro": "#00CED1",	
     "RES Geo": "#FF0000",	
-    "Solar": "#FFFF00",
+    #"Solar": "#FFFF00",
     "Geothermal": "#FF0000"
     }
 
