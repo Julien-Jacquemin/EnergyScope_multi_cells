@@ -98,8 +98,8 @@ Mobility;Freight;Truck gas;TRUCK_NG;371.1111111;18.55555556;0;15;0.092592593;0;1
 Infrastructure;Infrastructure;Efficiency mesures in energy system;EFFICIENCY;3320;0;0;1;1;0;1;0;1.00E+15;
 Infrastructure;Infrastructure;Distric heating network;DHN;825.8825733;0;0;60;1;0;1;0;1.00E+15;
 Infrastructure;Infrastructure;Electrical grid cost;GRID ;446394.729;0;0;80;1;0;1;0;1.00E+15;OIL
-Infrastructure;Infrastructure;Hydrogen grid pipeline;H2_GRID_PIPELINE;208.4451;1.876;0;40;1;0;1;0;1.00E+15;
-Infrastructure;Infrastructure;Hydrogen grid compressor;H2_GRID_COMPRESSOR;70.4351;1.1974;0;25;1;0;1;0;1.00E+15;
+Infrastructure;Infrastructure;Hydrogen grid pipeline;H2_GRID_PIPELINE;195.25;3.134;0;40;1;0;1;0;1.00E+15;
+Infrastructure;Infrastructure;Hydrogen grid compressor;H2_GRID_COMPRESSOR;65.97;2;0;25;1;0;1;0;1.00E+15;
 Infrastructure;Infrastructure;Injection H2 into gas grid;H2_IN_GAS_GRID;0.000001;0;0;40;1;0;1;0;1.00E+15;
 Electricity;Electricity;Parabolic trough collectors;PT_COLLECTOR;4504.71429;62.65;0;25;1;0;1;0;1.00E+15;
 Electricity;Electricity;Solar tower collectors;ST_COLLECTOR;100;5;0;25;1;0;1;0;1.00E+15;
