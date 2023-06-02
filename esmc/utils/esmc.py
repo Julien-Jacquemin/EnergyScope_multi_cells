@@ -100,7 +100,7 @@ class Esmc:
 
         # create empty dictionary to be filled with main results
         self.results = dict.fromkeys(['TotalCost', 'Cost_breakdown', 'Gwp_breakdown', 'Exchanges_year', 'Resources',
-                                      'Assets', 'Sto_assets', 'Year_balance', 'Curt'])
+                                      'Assets', 'Sto_assets', 'Year_balance', 'Curt', 'Exch_ts'])
 
         return
 
@@ -745,7 +745,7 @@ class Esmc:
     def prints_esom(self, inputs=True, outputs=True, solve_info=False):
         # TODO Update
         # if inputs:
-
+        
 
             # # Printing input sets and parameters variables names
             # logging.info('Printing inputs')
@@ -784,7 +784,9 @@ class Esmc:
         self.get_assets()
         self.get_year_balance()
         self.get_curt()
+        self.get_exchange_ts()
         return
+    
 
     def get_total_cost(self):
         """Get the total annualized cost of the energy system of the different regions
@@ -1217,6 +1219,13 @@ class Esmc:
         curt.sort_index(inplace=True)
         # Store Curt into results
         self.results['Curt'] = curt
+        return
+    
+    def get_exchange_ts(self):
+        logging.info('Getting Exchange time series')
+        
+        self.results['Exch_ts'] =  self.esom.get_var('Exch_imp').loc[(slice(None), slice(None),["H2", "GAS", "ELECTRICITY"])]
+        
         return
 
     def categorical_esmc(self, df: pd.DataFrame, col_name: str, el_name: str):
