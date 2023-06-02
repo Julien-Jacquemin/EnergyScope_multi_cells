@@ -96,8 +96,12 @@ class Region:
         # if the file exist, update the data
         if r_path.is_file():
             # read csv and clean df
-            df = pd.read_csv(r_path, sep=CSV_SEPARATOR, header=[2], index_col=[2]).dropna(axis=1, how='all')
+            if self.ref_region:
+                df = pd.read_csv(r_path, sep=CSV_SEPARATOR, header=[2], index_col=[2]).dropna(axis=1, how='all')
+            else :
+                df = pd.read_csv(r_path, sep=CSV_SEPARATOR, header=[0], index_col=[0]).dropna(axis=1, how='all')
             df = clean_indices(df)
+            
 
             # put df into attribute data
             if self.ref_region:

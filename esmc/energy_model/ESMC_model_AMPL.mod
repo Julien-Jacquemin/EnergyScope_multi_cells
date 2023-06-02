@@ -87,6 +87,7 @@ param c_op_exterior {RESOURCES} >= 0;
 param layers_in_out {RESOURCES union TECHNOLOGIES diff STORAGE_TECH , LAYERS}; # f: input/output Resources/Technologies to Layers. Reference is one unit ([GW] or [Mpkm/h] or [Mtkm/h]) of (main) output of the resource/technology. input to layer (output of technology) > 0.
 param gwp_op_exterior {RESOURCES} >= 0;
 param co2_net {RESOURCES} >= 0;
+param large_value >=0 default 10**15;
 
 # Attribute of electric vehicles
 param batt_per_car {V2G} >= 0; # ev_Batt_size [GWh]: Battery size per EVs car technology
@@ -321,20 +322,20 @@ subject to op_cost_calc {c in REGIONS, i in RESOURCES}:
 # Constraints depending on hydrogen exchange. Only one of the two groups should be enforced at a time.
 # Cost of network connections between regions, when hydrogen can be exchanged
 subject to exch_network_cost_calc_when_H2 {c in REGIONS, i in EXCHANGE_NETWORK_R diff EXCHANGE_NETWORK_BIDIRECTIONAL diff {"GAS", "H2"}}:
-	C_exch_network [c,i] = sum {c2 in REGIONS} (c_exch_network [c,c2,i] * (Transfer_capacity [c,c2,i] - tc_min[c,c2,i]) + OnM_cost_exchange[c,c2,i] * tc_min[c,c2,i]);
+	C_exch_network [c,i] = sum {c2 in REGIONS} (c_exch_network [c,c2,i] * Transfer_capacity [c,c2,i]);
 subject to exch_network_cost_calc_gas {c in REGIONS}:
-	C_exch_network [c,"GAS"] = sum {c2 in REGIONS} (OnM_cost_exchange [c,c2,"GAS"] * Transfer_capacity [c,c2,"GAS"]);
+	C_exch_network [c,"GAS"] = sum {c2 in REGIONS} (c_exch_network [c,c2,"GAS"] * tc_min[c,c2,"GAS"]);
 subject to exch_network_cost_calc_H2 {c in REGIONS}:
 	C_exch_network [c,"H2"] = sum {c2 in REGIONS} (c_exch_network [c,c2,"H2"] * (Transfer_capacity [c,c2,"H2"] - (1-ntw_H2_capa_loss) * Total_converted_capacity[c,c2]) + repurpose_cost_exchange[c,c2] * (1-ntw_H2_capa_loss) * Total_converted_capacity[c,c2]);
 
 # Cost of network connections between regions, when hydrogen can not be exchanged
 subject to exch_network_cost_calc {c in REGIONS, i in EXCHANGE_NETWORK_R diff EXCHANGE_NETWORK_BIDIRECTIONAL}:
-	C_exch_network [c,i] = sum {c2 in REGIONS} (c_exch_network [c,c2,i] * (Transfer_capacity [c,c2,i] - tc_min[c,c2,i]) + OnM_cost_exchange[c,c2,i] * tc_min[c,c2,i]);
+	C_exch_network [c,i] = sum {c2 in REGIONS} (c_exch_network [c,c2,i] * Transfer_capacity [c,c2,i]);
 
 
 # Cost of bidirectional network connections between regions (doesn't depend on hydrogen exchange).
 subject to exch_network_cost_calc_bidirectional {c in REGIONS, i in EXCHANGE_NETWORK_BIDIRECTIONAL}:
-	C_exch_network [c,i] = sum {c2 in REGIONS} ((c_exch_network [c,c2,i] * (Transfer_capacity [c,c2,i] - tc_min[c,c2,i]) + OnM_cost_exchange[c,c2,i] * tc_min[c,c2,i]) / 2);
+	C_exch_network [c,i] = sum {c2 in REGIONS} (c_exch_network [c,c2,i] * Transfer_capacity [c,c2,i])/2;
 
 ## Emissions
 #-----------
@@ -374,6 +375,11 @@ subject to capacity_factor {c in REGIONS, j in TECHNOLOGIES}:
 
 subject to H2_injection_limit {c in REGIONS, h in HOURS, td in TYPICAL_DAYS}:
 	F_t [c, "H2_IN_GAS_GRID", h, td] * layers_in_out ["H2_IN_GAS_GRID", "GAS"] * t_op [h, td] <= (sum {j in TECHNOLOGIES diff {"H2_IN_GAS_GRID"} diff STORAGE_TECH : layers_in_out [j, "GAS"] > 0} (F_t [c, j, h, td] * layers_in_out [j, "GAS"] * t_op [h, td]) +  R_t_local [c, "GAS", h, td] * t_op [h, td] + R_t_exterior [c, "GAS", h, td] * t_op [h, td]) * injection_H2_ratio_max;
+
+# For reversible technologies :
+subject to reversible_H2_tech_installed_power {c in REGIONS}:
+	F [c, "H2_REG_ELECTROLYSER"] = F [c, "H2_REG_FUELCELL"];
+
 		
 ## Resources
 #-----------
@@ -645,7 +651,7 @@ subject to transfer_capacity_bounds_gas {c1 in REGIONS, c2 in REGIONS, i in {"GA
 	tc_min[c1, c2, i] <= Transfer_capacity[c1,c2,i] + Total_converted_capacity[c1,c2] <= tc_mul[i]*tc_max[c1, c2, i];
 # If H2 exchanges are considered :
 subject to total_conversion_transfer_capacity_bounds_H2 {c1 in REGIONS, c2 in REGIONS}:
-	Total_converted_capacity[c1,c2] <= conversion_ratio_max*Transfer_capacity[c1,c2,"H2"];
+	(1-ntw_H2_capa_loss) * Total_converted_capacity[c1,c2] <= conversion_ratio_max*Transfer_capacity[c1,c2,"H2"];
 # If H2 exchanges are not allowed :
 subject to total_conversion_transfer_capacity_bounds {c1 in REGIONS, c2 in REGIONS}:
 	Total_converted_capacity[c1,c2] = 0;
