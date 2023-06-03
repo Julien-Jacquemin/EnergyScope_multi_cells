@@ -821,7 +821,7 @@ class Esmc:
         # create frames for concatenation (list of df to concat)
         frames = list()
         for n, r in self.regions.items():
-            r.compute_tau()
+            r.compute_tau(i_rate = self.data_indep["Misc_indep"]["i_rate"])
             frames.append(r.data['tau'].copy())
 
         all_tau = pd.concat(frames, axis=0, keys=self.regions_names)
