@@ -1,6 +1,7 @@
 {
     "i_rate" : 0.075,
 	"gwp_limit_overall": 1e15,
+	"resource_freight_capacity_limit": 1e15,
 	"injection_H2_ratio_max": 0.05,
 	"ntw_H2_capa_loss": 0.3,
 	"power_density_pv" : 0.170,
@@ -50,6 +51,6 @@
 	              "STORAGE_DAILY" : ["TS_DEC_HP_ELEC", "TS_DEC_THHP_GAS", "TS_DEC_COGEN_GAS", "TS_DEC_COGEN_OIL",
                     "TS_DEC_ADVCOGEN_GAS", "TS_DEC_ADVCOGEN_H2", "TS_DEC_BOILER_GAS", "TS_DEC_BOILER_WOOD", "TS_DEC_BOILER_OIL",
                     "TS_DEC_DIRECT_ELEC", "TS_DHN_DAILY", "BATT_LI", "TS_HIGH_TEMP"],
-				  "V2G": ["CAR_PHEV", "CAR_BEV"]	  
+				  "V2G": ["CAR_PHEV", "CAR_BEV"]
 	}				
 }
