@@ -196,7 +196,7 @@ param sm_max >= 0 default 4; # Maximum solar multiple for csp plants
 # Parameters for additional freight due to exchanges calcultations
 param  dist{REGIONS, REGIONS} >=0 default 1E+09; #travelled distance by fuels exchanged in each region
 param  c_exch_network{REGIONS,REGIONS,EXCHANGE_NETWORK_R} >= 0 default 0; # Investment cost of network connections between cells
-param resource_freight_capacity_limit >=0 default 10^15; # transfer capacity limit for additional freight transportation.
+param  resource_freight_capacity_limit >=0 default 1E+15; #transfer capacity limit for additional freight transportation.
 
 
 #################################
@@ -669,10 +669,10 @@ subject to freight_of_exchanges{c1 in REGIONS} :
 subject to additional_freight{c in REGIONS} :
 	sum{j in TECHNOLOGIES_OF_END_USES_CATEGORY["MOBILITY_FREIGHT"]} (Shares_mobility_freight [c,j]) = (Exch_freight[c] + end_uses_input[c,"MOBILITY_FREIGHT"])/(end_uses_input[c,"MOBILITY_FREIGHT"]);
 
-subject to resource_freight_capa_limit_imp {c1 in REGIONS, c2 in REGIONS, h in HOURS, td in TYPICAL_DAYS}:
-	sum{r in EXCHANGE_FREIGHT_R} (Exch_imp[c1, c2, r, h, td]) < resource_freight_capacity_limit;
-subject to resource_freight_capa_limit_exp {c1 in REGIONS, c2 in REGIONS, h in HOURS, td in TYPICAL_DAYS}:
-	sum{r in EXCHANGE_FREIGHT_R} (Exch_exp[c1, c2, r, h, td]) < resource_freight_capacity_limit;
+subject to resource_freight_capa_limit_imp{c1 in REGIONS, c2 in REGIONS, h in HOURS, td in TYPICAL_DAYS} :
+	sum{r in EXCHANGE_FREIGHT_R} (Exch_imp[c1, c2, r, h, td]) <= resource_freight_capacity_limit;
+subject to resource_freight_capa_limit_exp{c1 in REGIONS, c2 in REGIONS, h in HOURS, td in TYPICAL_DAYS} :
+	sum{r in EXCHANGE_FREIGHT_R} (Exch_exp[c1, c2, r, h, td]) <= resource_freight_capacity_limit;
 
 
 ##########################
