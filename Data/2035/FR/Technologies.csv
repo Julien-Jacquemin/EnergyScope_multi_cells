@@ -130,9 +130,6 @@ Synthetic fuels;Synthetic fuels;Hydrogen methanolation;SYN_METHANOLATION;1679.65
 Synthetic fuels;Synthetic fuels;Methane to methanol;METHANE_TO_METHANOL;958.5822643;41.91520353;0;25;0.85;0;1;0;1.00E+15;
 Synthetic fuels;Synthetic fuels;Biomass methanolation;BIOMASS_TO_METHANOL ;2520;38.5;0;20;1;0;1;0;1.00E+15;
 Synthetic fuels;Synthetic fuels;Haber bosch (H2 to amonia);HABER_BOSCH ;847;16.56;0;20;1;0;1;0;1.00E+15;
-Synthetic fuels;Synthetic fuels;Fischer-Tropsch;FISCHER_TROPSCH_CO_DIESEL;975;48.75;0;25;0.93;0;1;0;1.00E+15;
-Synthetic fuels;Synthetic fuels;Fischer-Tropsch;FISCHER_TROPSCH_CO_GASOLINE;975;48.75;0;25;0.93;0;1;0;1.00E+15;
-Synthetic fuels;Synthetic fuels;Fischer-Tropsch;FISCHER_TROPSCH_CO_LFO;975;48.75;0;25;0.93;0;1;0;1.00E+15;
 Synthetic fuels;Synthetic fuels;Fischer-Tropsch;FISCHER_TROPSCH_DIESEL;279;29.61;0;25;0.93;0;1;0;1.00E+15;
 Synthetic fuels;Synthetic fuels;Fischer-Tropsch;FISCHER_TROPSCH_GASOLINE;279;29.61;0;25;0.93;0;1;0;1.00E+15;
 Synthetic fuels;Synthetic fuels;Fischer-Tropsch;FISCHER_TROPSCH_LFO;279;29.61;0;25;0.93;0;1;0;1.00E+15;
